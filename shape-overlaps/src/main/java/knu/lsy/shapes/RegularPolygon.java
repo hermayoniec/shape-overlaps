@@ -33,11 +33,9 @@ public class RegularPolygon extends Shape {
 
     @Override
     public boolean overlaps(Shape other) {
-        // Si el otro también es un polígono, usamos SAT
         List<Point> thisVertices = this.getVertices();
         List<Point> otherVertices = other.getVertices();
 
-        // SAT: usar normales (vectores perpendiculares a los lados) como ejes
         List<Point> axes = getNormals(thisVertices);
         axes.addAll(getNormals(otherVertices));
 
@@ -45,13 +43,12 @@ public class RegularPolygon extends Shape {
             Projection p1 = projectOntoAxis(thisVertices, axis);
             Projection p2 = projectOntoAxis(otherVertices, axis);
             if (!p1.overlaps(p2)) {
-                return false; // Separa → no hay colisión
+                return false;
             }
         }
 
-        return true; // No hubo separación → colisión
+        return true;
     }
-
 
     @Override
     public JSONObject toJSON() {
@@ -82,7 +79,7 @@ public class RegularPolygon extends Shape {
     public List<Point> getVertices() {
         return new ArrayList<>(vertices);
     }
-    // Proyección en un eje (usado en SAT)
+
     private static class Projection {
         double min, max;
 
@@ -96,25 +93,21 @@ public class RegularPolygon extends Shape {
         }
     }
 
-    // Devuelve una lista de vectores normales (ejes) para SAT
     private List<Point> getNormals(List<Point> vertices) {
         List<Point> normals = new ArrayList<>();
         for (int i = 0; i < vertices.size(); i++) {
             Point p1 = vertices.get(i);
             Point p2 = vertices.get((i + 1) % vertices.size());
 
-            // Vector del lado
             double dx = p2.getX() - p1.getX();
             double dy = p2.getY() - p1.getY();
 
-            // Vector normal (perpendicular)
             Point normal = new Point(-dy, dx);
             normals.add(normalize(normal));
         }
         return normals;
     }
 
-    // Proyecta un polígono sobre un eje
     private Projection projectOntoAxis(List<Point> vertices, Point axis) {
         double min = dotProduct(vertices.get(0), axis);
         double max = min;
@@ -128,12 +121,10 @@ public class RegularPolygon extends Shape {
         return new Projection(min, max);
     }
 
-    // Producto punto
     private double dotProduct(Point p1, Point p2) {
         return p1.getX() * p2.getX() + p1.getY() * p2.getY();
     }
 
-    // Normaliza un vector
     private Point normalize(Point p) {
         double length = Math.sqrt(p.getX() * p.getX() + p.getY() * p.getY());
         return new Point(p.getX() / length, p.getY() / length);
