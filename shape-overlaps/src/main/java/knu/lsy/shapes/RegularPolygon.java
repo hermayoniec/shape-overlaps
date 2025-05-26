@@ -31,18 +31,27 @@ public class RegularPolygon extends Shape {
         return points;
     }
 
-    // TODO: 학생 과제 - 정다각형의 겹침 감지 알고리즘 구현
     @Override
     public boolean overlaps(Shape other) {
-        // 임시 구현: 랜덤하게 true/false 반환
-        return Math.random() < 0.3;
+        // Si el otro también es un polígono, usamos SAT
+        List<Point> thisVertices = this.getVertices();
+        List<Point> otherVertices = other.getVertices();
 
-        // 힌트:
-        // 1. SAT(Separating Axis Theorem) 알고리즘 사용 권장
-        // 2. 각 다각형의 모든 변에 대한 법선벡터를 계산
-        // 3. 각 법선에 두 도형을 투영하여 겹치는지 확인
-        // 4. 모든 법선에서 겹치면 두 도형이 겹침
+        // SAT: usar normales (vectores perpendiculares a los lados) como ejes
+        List<Point> axes = getNormals(thisVertices);
+        axes.addAll(getNormals(otherVertices));
+
+        for (Point axis : axes) {
+            Projection p1 = projectOntoAxis(thisVertices, axis);
+            Projection p2 = projectOntoAxis(otherVertices, axis);
+            if (!p1.overlaps(p2)) {
+                return false; // Separa → no hay colisión
+            }
+        }
+
+        return true; // No hubo separación → colisión
     }
+
 
     @Override
     public JSONObject toJSON() {
@@ -72,5 +81,61 @@ public class RegularPolygon extends Shape {
     @Override
     public List<Point> getVertices() {
         return new ArrayList<>(vertices);
+    }
+    // Proyección en un eje (usado en SAT)
+    private static class Projection {
+        double min, max;
+
+        Projection(double min, double max) {
+            this.min = min;
+            this.max = max;
+        }
+
+        boolean overlaps(Projection other) {
+            return !(this.max < other.min || other.max < this.min);
+        }
+    }
+
+    // Devuelve una lista de vectores normales (ejes) para SAT
+    private List<Point> getNormals(List<Point> vertices) {
+        List<Point> normals = new ArrayList<>();
+        for (int i = 0; i < vertices.size(); i++) {
+            Point p1 = vertices.get(i);
+            Point p2 = vertices.get((i + 1) % vertices.size());
+
+            // Vector del lado
+            double dx = p2.getX() - p1.getX();
+            double dy = p2.getY() - p1.getY();
+
+            // Vector normal (perpendicular)
+            Point normal = new Point(-dy, dx);
+            normals.add(normalize(normal));
+        }
+        return normals;
+    }
+
+    // Proyecta un polígono sobre un eje
+    private Projection projectOntoAxis(List<Point> vertices, Point axis) {
+        double min = dotProduct(vertices.get(0), axis);
+        double max = min;
+
+        for (int i = 1; i < vertices.size(); i++) {
+            double projection = dotProduct(vertices.get(i), axis);
+            if (projection < min) min = projection;
+            if (projection > max) max = projection;
+        }
+
+        return new Projection(min, max);
+    }
+
+    // Producto punto
+    private double dotProduct(Point p1, Point p2) {
+        return p1.getX() * p2.getX() + p1.getY() * p2.getY();
+    }
+
+    // Normaliza un vector
+    private Point normalize(Point p) {
+        double length = Math.sqrt(p.getX() * p.getX() + p.getY() * p.getY());
+        return new Point(p.getX() / length, p.getY() / length);
     }
 }
