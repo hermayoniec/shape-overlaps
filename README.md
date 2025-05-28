@@ -51,3 +51,5 @@ cd shape-overlaps-detection
 ./gradlew bootRun
 
 # Once the server starts, go to ---> http://localhost:8080
+
+# Notion Page: https://www.notion.so/Shape-Overlaps-Detection-System-20049dcedb338019ae6fdf20a403aa4a?pvs=4
